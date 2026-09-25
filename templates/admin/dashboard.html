@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Dashboard | UPSC Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow p-6 flex justify-between items-center">
+      <h1 class="text-3xl font-extrabold text-gray-900">Admin Dashboard</h1>
+      <a
+        href="{{ url_for('admin.logout') }}"
+        class="text-red-600 hover:text-red-800 font-semibold transition-colors duration-300"
+        >Logout</a
+      >
+    </header>
+
+    <!-- Dashboard Content -->
+    <main class="flex-1 flex justify-center items-start pt-32 pb-12 px-6">
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-10 max-w-7xl w-full"
+      >
+        <!-- Manage Users -->
+        <a
+          href="/admin/manage_users"
+          role="button"
+          aria-label="Manage Users"
+          class="block p-10 bg-white rounded-3xl shadow-lg border-2 border-transparent hover:border-blue-500 hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 cursor-pointer"
+        >
+          <h2 class="text-2xl font-semibold text-gray-900 mb-3">
+            Manage Users
+          </h2>
+          <p class="text-gray-700 leading-relaxed text-lg">
+            View, analyze and manage registered users.
+          </p>
+        </a>
+
+        <!-- Manage PYQs -->
+        <a
+          href="/admin/manage_pyqs"
+          role="button"
+          aria-label="Manage PYQs"
+          class="block p-10 bg-white rounded-3xl shadow-lg border-2 border-transparent hover:border-green-500 hover:bg-green-50 transform hover:scale-105 transition-all duration-300 cursor-pointer"
+        >
+          <h2 class="text-2xl font-semibold text-gray-900 mb-3">Manage PYQs</h2>
+          <p class="text-gray-700 leading-relaxed text-lg">
+            Add, edit, or remove previous year question papers.
+          </p>
+        </a>
+
+        <!-- Manage Syllabus -->
+        <a
+          href="/admin/manage_syllabus"
+          role="button"
+          aria-label="Manage Syllabus"
+          class="block p-10 bg-white rounded-3xl shadow-lg border-2 border-transparent hover:border-purple-500 hover:bg-purple-50 transform hover:scale-105 transition-all duration-300 cursor-pointer"
+        >
+          <h2 class="text-2xl font-semibold text-gray-900 mb-3">
+            Manage Syllabus
+          </h2>
+          <p class="text-gray-700 leading-relaxed text-lg">
+            Update and maintain the syllabus content.
+          </p>
+        </a>
+
+        <!-- Manage Feedbacks -->
+        <a
+          href="/admin/manage_feedbacks"
+          role="button"
+          aria-label="Manage Feedbacks"
+          class="block p-10 bg-white rounded-3xl shadow-lg border-2 border-transparent hover:border-yellow-500 hover:bg-yellow-50 transform hover:scale-105 transition-all duration-300 cursor-pointer"
+        >
+          <h2 class="text-2xl font-semibold text-gray-900 mb-3">
+            Manage Feedbacks
+          </h2>
+          <p class="text-gray-700 leading-relaxed text-lg">
+            View and manage user feedback submissions.
+          </p>
+        </a>
+      </div>
+    </main>
+  </body>
+</html>

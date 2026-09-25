@@ -1,0 +1,71 @@
+{% extends "base.html" %} {% block title %}Dashboard - UPSC Aspirant{% endblock
+%} {% block styles %}
+<style>
+  .topic-card {
+    width: 30vw; /* keep width similar */
+    max-width: 280px;
+    min-width: 220px;
+    height: calc(30vw * 0.65); /* height = 65% of width */
+    max-height: 180px; /* limit max height */
+    min-height: 140px; /* limit min height */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 0 auto;
+  }
+  .topic-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+  .topic-icon {
+    font-size: 3rem;
+    margin-bottom: 0.6rem;
+  }
+  .topic-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+</style>
+
+<div class="container mx-auto px-4 py-32">
+  <div class="flex items-center justify-between flex-wrap mb-8">
+    <div class="flex items-center space-x-16">
+      <a
+        href="/dashboard"
+        class="w-12 h-12 bg-white text-indigo-600 hover:bg-indigo-200 rounded-full flex items-center justify-center shadow transition-colors"
+        title="Back"
+      >
+        <i class="fas fa-arrow-left text-xl"></i>
+      </a>
+      <h1 class="text-3xl md:text-4xl font-bold">Static GK Resources</h1>
+    </div>
+  </div>
+
+  <!-- Topics Grid -->
+  <div class="grid grid-cols-4 gap-6 justify-center">
+    {% for topic in topics %}
+    <div
+      class="topic-card bg-white rounded-xl shadow-md overflow-hidden"
+      onclick="openTopicLink('{{ topic.link }}')"
+    >
+      <div
+        class="bg-white text-indigo-900 hover:bg-indigo-300 border-2 rounded-xl border-indigo-300 p-5 flex flex-col items-center justify-center h-full"
+      >
+        <i class="fas {{ topic.icon }} topic-icon"></i>
+        <h3 class="topic-title">{{ topic.name }}</h3>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  function openTopicLink(url) {
+    window.open(url, "_blank");
+  }
+</script>
+{% endblock %}
