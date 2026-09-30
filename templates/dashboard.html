@@ -45,11 +45,11 @@
         </div>
 
 
-        <div
+        <a
+            href="{{ url_for('quiz') }}"
             class="flex items-center gap-3 p-3 rounded-xl
                    bg-indigo-300 shadow-sm mb-3
-                   hover:scale-[1.02] transition cursor-pointer"
-            onclick="showComingSoon()"
+                   hover:scale-[1.02] transition"
         >
 
             <div
@@ -64,12 +64,38 @@
                     Daily Quiz
                 </span>
 
-                <p class="text-xs text-gray-600">
-                    Coming Soon
+                <p class="text-xs text-indigo-900 font-medium">
+                    20 Questions Test
                 </p>
             </div>
 
-        </div>
+        </a>
+
+        <a
+            href="{{ url_for('study_planner') }}"
+            class="flex items-center gap-3 p-3 rounded-xl
+                   bg-emerald-300 shadow-sm mb-3
+                   hover:scale-[1.02] transition"
+        >
+
+            <div
+                class="w-11 h-11 bg-white/60 rounded-lg
+                       flex items-center justify-center text-2xl"
+            >
+                📅
+            </div>
+
+            <div>
+                <span class="font-semibold text-gray-800">
+                    Study Planner
+                </span>
+
+                <p class="text-xs text-emerald-900 font-medium">
+                    Today's To-Do List
+                </p>
+            </div>
+
+        </a>
 
         <a
             href="{{ url_for('current_affairs') }}"
@@ -276,36 +302,39 @@
                 Today's Goal
             </p>
 
-            <h2 class="text-3xl font-bold text-gray-800 mt-2">
-                0 / 5
+            <h2 id="dash-goal-stat" class="text-3xl font-bold text-gray-800 mt-2">
+                0 / 0
             </h2>
 
-            <p class="text-xs text-gray-400 mt-2">
-                Tasks completed
+            <p id="dash-goal-sub" class="text-xs text-gray-400 mt-2">
+                Tasks completed today
             </p>
 
         </div>
 
 
 
-        <div
-            class="bg-white rounded-2xl shadow-md p-5
-                   border-l-4 border-blue-500"
+        <a
+            href="{{ url_for('quiz') }}"
+            class="block bg-white rounded-2xl shadow-md p-5
+                   border-l-4 border-blue-500 hover:shadow-lg transition cursor-pointer"
         >
 
-            <p class="text-sm text-gray-500">
-                Quiz Score
+            <p class="text-sm text-gray-500 flex items-center justify-between">
+                <span>Daily Quiz</span>
+                <span class="text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">20 MCQs</span>
             </p>
 
-            <h2 class="text-3xl font-bold text-gray-800 mt-2">
-                0%
+            <h2 class="text-2xl font-bold text-gray-800 mt-2 flex items-center gap-2">
+                {% if last_quiz_score > 0 %}{{ last_quiz_score }}%{% else %}Start Test{% endif %}
+                <i class="fas fa-arrow-right text-base text-blue-500"></i>
             </h2>
 
-            <p class="text-xs text-gray-400 mt-2">
-                Start your first quiz
+            <p class="text-xs text-blue-600 mt-2 font-medium">
+                {% if total_quizzes > 0 %}{{ total_quizzes }} test(s) completed{% else %}Solve shuffled UPSC questions{% endif %}
             </p>
 
-        </div>
+        </a>
 
 
 
@@ -314,16 +343,19 @@
                    border-l-4 border-orange-500"
         >
 
-            <p class="text-sm text-gray-500">
-                Current Streak
+            <p class="text-sm text-gray-500 flex items-center justify-between">
+                <span>Current Streak</span>
+                {% if streak > 0 %}
+                <span class="text-xs bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">Active 🔥</span>
+                {% endif %}
             </p>
 
             <h2 class="text-3xl font-bold text-gray-800 mt-2">
-                🔥 0
+                🔥 {{ streak }}
             </h2>
 
-            <p class="text-xs text-gray-400 mt-2">
-                Days
+            <p class="text-xs {% if streak > 0 %}text-orange-600 font-semibold{% else %}text-gray-400{% endif %} mt-2">
+                {% if streak > 0 %}Day(s) continuous streak!{% else %}Take a quiz to start streak{% endif %}
             </p>
 
         </div>
@@ -422,6 +454,30 @@
 
 
             <a
+                href="{{ url_for('quiz') }}"
+                class="flex items-center gap-4 p-4 rounded-xl
+                       bg-indigo-50 hover:bg-indigo-100
+                       transition mb-3"
+            >
+
+                <span class="text-3xl">📝</span>
+
+                <div>
+
+                    <h3 class="font-semibold text-gray-800">
+                        Daily UPSC Quiz
+                    </h3>
+
+                    <p class="text-sm text-gray-500">
+                        Solve 20 randomized MCQs
+                    </p>
+
+                </div>
+
+            </a>
+
+
+            <a
                 href="{{ url_for('class_select') }}"
                 class="flex items-center gap-4 p-4 rounded-xl
                        bg-green-50 hover:bg-green-100
@@ -448,90 +504,91 @@
 
 
 
-        <div class="bg-white rounded-2xl shadow-md p-6">
+        <!-- Today's Study Planner (To-Do List) Widget -->
+        <div class="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between">
 
-            <h2 class="text-xl font-bold text-gray-800">
-                Today's Focus
-            </h2>
-
-            <p class="text-sm text-gray-500 mt-1 mb-6">
-                Build a consistent study habit.
-            </p>
-
-
-            <div class="space-y-5">
-
-                <div class="flex items-center gap-4">
-
-                    <div
-                        class="w-11 h-11 rounded-full bg-teal-100
-                               flex items-center justify-center text-xl"
-                    >
-                        📖
-                    </div>
-
+            <div>
+                <div class="flex items-center justify-between mb-2">
                     <div>
-
-                        <p class="font-semibold text-gray-800">
-                            Study NCERT
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <span>Today's Study Plan</span>
+                            <span class="text-xs bg-teal-100 text-teal-800 font-semibold px-2.5 py-0.5 rounded-full">
+                                {{ today.strftime('%d %b') }}
+                            </span>
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            Tick completed tasks or add new targets
                         </p>
-
-                        <p class="text-sm text-gray-500">
-                            Strengthen your basics
-                        </p>
-
                     </div>
 
+                    <a
+                        href="{{ url_for('study_planner') }}"
+                        class="text-xs font-semibold text-teal-600 hover:text-teal-800 flex items-center gap-1 bg-teal-50 px-3 py-1.5 rounded-lg transition"
+                    >
+                        Full Planner <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
                 </div>
 
-
-                <div class="flex items-center gap-4">
-
-                    <div
-                        class="w-11 h-11 rounded-full bg-purple-100
-                               flex items-center justify-center text-xl"
+                <!-- Quick Add Form -->
+                <form id="dash-task-form" class="flex gap-2 my-4">
+                    <input
+                        type="text"
+                        id="dash-task-input"
+                        placeholder="Add today's target (e.g. Modern History 1 hr)..."
+                        class="flex-1 px-3 py-2 text-xs md:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        required
+                    />
+                    <button
+                        type="submit"
+                        class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl text-xs md:text-sm transition flex items-center gap-1 shadow-sm"
                     >
-                        📚
-                    </div>
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </form>
 
-                    <div>
-
-                        <p class="font-semibold text-gray-800">
-                            Solve PYQs
-                        </p>
-
-                        <p class="text-sm text-gray-500">
-                            Understand previous questions
-                        </p>
-
-                    </div>
-
+                <!-- Task Checklist -->
+                <div class="max-h-60 overflow-y-auto pr-1">
+                    <ul id="dash-task-list" class="space-y-2 text-sm">
+                        {% for task in today_tasks %}
+                        <li id="dash-task-{{ task.id }}" class="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 hover:bg-gray-50 transition">
+                            <label class="flex items-center gap-2.5 flex-1 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    onchange="toggleDashTask({{ task.id }})"
+                                    {% if task.is_completed %}checked{% endif %}
+                                    class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500 cursor-pointer"
+                                />
+                                <span class="dash-task-text text-xs md:text-sm font-medium text-gray-800 {% if task.is_completed %}line-through text-gray-400{% endif %}">
+                                    {{ task.task_text }}
+                                </span>
+                            </label>
+                            <button
+                                onclick="deleteDashTask({{ task.id }})"
+                                class="text-gray-300 hover:text-red-500 p-1 transition"
+                                title="Delete target"
+                            >
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </li>
+                        {% else %}
+                        <li id="dash-empty-state" class="text-center py-6 text-gray-400">
+                            <i class="fas fa-tasks text-3xl mb-2 text-gray-300 block"></i>
+                            <p class="text-xs font-medium text-gray-500">No targets added for today yet.</p>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Quickly add a study goal above!</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </div>
+            </div>
 
-
-                <div class="flex items-center gap-4">
-
-                    <div
-                        class="w-11 h-11 rounded-full bg-yellow-100
-                               flex items-center justify-center text-xl"
-                    >
-                        📰
-                    </div>
-
-                    <div>
-
-                        <p class="font-semibold text-gray-800">
-                            Read Current Affairs
-                        </p>
-
-                        <p class="text-sm text-gray-500">
-                            Keep yourself updated
-                        </p>
-
-                    </div>
-
-                </div>
-
+            <!-- Bottom Progress Banner -->
+            <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                <span id="dash-status-text">
+                    {{ completed_count }} of {{ total_count }} tasks done
+                </span>
+                <span class="font-semibold text-teal-600">
+                    Stay Consistent 🎯
+                </span>
             </div>
 
         </div>
@@ -586,12 +643,121 @@ function toggleSidebar() {
 
 }
 
+function updateDashStats() {
+    const checkboxes = document.querySelectorAll('#dash-task-list input[type="checkbox"]');
+    const total = checkboxes.length;
+    let done = 0;
+    checkboxes.forEach(cb => {
+        if (cb.checked) done++;
+    });
 
-function showComingSoon() {
-
-    alert("Daily Quiz feature is coming soon!");
-
+    const stat = document.getElementById('dash-goal-stat');
+    const statusText = document.getElementById('dash-status-text');
+    if (stat) stat.textContent = `${done} / ${total}`;
+    if (statusText) statusText.textContent = `${done} of ${total} tasks done`;
 }
+
+// Handle Add Task from Dashboard
+const dashForm = document.getElementById('dash-task-form');
+if (dashForm) {
+    dashForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const input = document.getElementById('dash-task-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const formData = new FormData();
+        formData.append('task_text', text);
+
+        try {
+            const res = await fetch("{{ url_for('add_study_task') }}", {
+                method: "POST",
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                input.value = '';
+                const empty = document.getElementById('dash-empty-state');
+                if (empty) empty.remove();
+
+                const task = data.task;
+                const li = document.createElement('li');
+                li.id = `dash-task-${task.id}`;
+                li.className = "flex items-center justify-between p-2.5 rounded-xl border border-gray-100 hover:bg-gray-50 transition";
+                li.innerHTML = `
+                    <label class="flex items-center gap-2.5 flex-1 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            onchange="toggleDashTask(${task.id})"
+                            class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500 cursor-pointer"
+                        />
+                        <span class="dash-task-text text-xs md:text-sm font-medium text-gray-800">
+                            ${task.task_text}
+                        </span>
+                    </label>
+                    <button
+                        onclick="deleteDashTask(${task.id})"
+                        class="text-gray-300 hover:text-red-500 p-1 transition"
+                        title="Delete target"
+                    >
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+                document.getElementById('dash-task-list').prepend(li);
+                updateDashStats();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    });
+}
+
+async function toggleDashTask(taskId) {
+    try {
+        const res = await fetch(`/study_planner/toggle/${taskId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            const item = document.getElementById(`dash-task-${taskId}`);
+            const textSpan = item.querySelector('.dash-task-text');
+            if (data.is_completed) {
+                textSpan.classList.add('line-through', 'text-gray-400');
+            } else {
+                textSpan.classList.remove('line-through', 'text-gray-400');
+            }
+            updateDashStats();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function deleteDashTask(taskId) {
+    try {
+        const res = await fetch(`/study_planner/delete/${taskId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            const item = document.getElementById(`dash-task-${taskId}`);
+            if (item) item.remove();
+
+            const list = document.getElementById('dash-task-list');
+            if (list.children.length === 0) {
+                list.innerHTML = `
+                    <li id="dash-empty-state" class="text-center py-6 text-gray-400">
+                        <i class="fas fa-tasks text-3xl mb-2 text-gray-300 block"></i>
+                        <p class="text-xs font-medium text-gray-500">No targets added for today yet.</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Quickly add a study goal above!</p>
+                    </li>
+                `;
+            }
+            updateDashStats();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// Initial count sync
+updateDashStats();
 
 </script>
 

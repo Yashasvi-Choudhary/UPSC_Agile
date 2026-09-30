@@ -1,8 +1,9 @@
 import os
 import json
+import random
 import requests
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -19,7 +20,7 @@ from urllib.parse import urlparse
 
 from extensions import db
 import urllib3
-from models import User, Feedback, UPSCPaper, Syllabus
+from models import User, Feedback, UPSCPaper, Syllabus, QuizQuestion, StudyTask
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -159,7 +160,33 @@ def login():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    today = datetime.utcnow().date()
+    today_tasks = StudyTask.query.filter_by(
+        user_id=current_user.id,
+        task_date=today
+    ).order_by(StudyTask.created_at.asc()).all()
+    completed_count = sum(1 for t in today_tasks if t.is_completed)
+    total_count = len(today_tasks)
+
+    # Check and maintain streak
+    streak = current_user.quiz_streak or 0
+    if current_user.last_quiz_date:
+        if current_user.last_quiz_date < today - timedelta(days=1):
+            # Streak broken because user missed yesterday
+            streak = 0
+            current_user.quiz_streak = 0
+            db.session.commit()
+
+    return render_template(
+        'dashboard.html',
+        today_tasks=today_tasks,
+        completed_count=completed_count,
+        total_count=total_count,
+        today=today,
+        streak=streak,
+        last_quiz_score=current_user.last_quiz_score or 0,
+        total_quizzes=current_user.total_quizzes_played or 0
+    )
 
 # Profile
 @app.route('/profile')
@@ -665,102 +692,126 @@ def interview_daf():
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# In-memory cache for UPSC What's New updates (10 min TTL)
+UPSC_UPDATES_CACHE = {
+    'timestamp': 0,
+    'data': []
+}
+
 def fetch_updates():
+    """Fetch live updates directly from UPSC official What's New page with caching"""
+    current_time = time.time()
+    if current_time - UPSC_UPDATES_CACHE['timestamp'] < 600 and UPSC_UPDATES_CACHE['data']:
+        return UPSC_UPDATES_CACHE['data']
+
     url = "https://www.upsc.gov.in/whats-new"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
+    }
 
-    options = Options()
-    options.add_argument("--headless")      # Run without opening browser
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920,1080")
-
-    driver = None
+    updates = []
+    seen = set()
 
     try:
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
+        # Fast HTTP request
+        resp = requests.get(url, headers=headers, timeout=8, verify=False)
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.text, "html.parser")
+            container = soup.find(class_='view-whats-new-page')
+            if container:
+                rows = container.find_all(class_='views-row')
+                for row in rows:
+                    a = row.find('a', href=True)
+                    if a:
+                        title = a.get_text(strip=True)
+                        href = a['href'].strip()
+                        if not title or len(title) < 5:
+                            continue
 
-        driver.get(url)
+                        if href.startswith('/'):
+                            full_link = "https://www.upsc.gov.in" + href
+                        elif href.startswith('http'):
+                            full_link = href
+                        else:
+                            full_link = urllib.parse.urljoin("https://www.upsc.gov.in/", urllib.parse.quote(href, safe='/:?=&'))
 
-        # Wait for page to load
-        time.sleep(1.5)
-
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-
-        updates = []
-
-        # Find all links
-        links = soup.find_all("a", href=True)
-
-        for link in links:
-            title = link.get_text(strip=True)
-            href = link["href"]
-
-            if not title:
-                continue
-
-            # Ignore navigation links
-            if len(title) < 8:
-                continue
-
-            if href.startswith("/"):
-                href = "https://www.upsc.gov.in" + href
-
-            # Keep only UPSC document links
-            if (
-                "/sites/default/files/" in href
-                or "notification" in href.lower()
-                or "result" in href.lower()
-                or "exam" in href.lower()
-            ):
-                updates.append({
-                    "title": title,
-                    "link": href
-                })
-
-        # Remove duplicates
-        unique_updates = []
-        seen = set()
-
-        for item in updates:
-            if item["title"] not in seen:
-                seen.add(item["title"])
-                unique_updates.append(item)
-
-        print("Updates Found:", len(unique_updates))
-
-        return unique_updates[:20]
+                        if title not in seen:
+                            seen.add(title)
+                            updates.append({'title': title, 'link': full_link})
 
     except Exception as e:
-        print("Fetch Error:", e)
-        return []
+        print("Requests fetch error, trying fallback:", e)
 
-    finally:
-        if driver:
-            driver.quit()
+    # Fallback to Selenium if requests got no results
+    if not updates:
+        driver = None
+        try:
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            driver.get(url)
+            time.sleep(2)
+            soup = BeautifulSoup(driver.page_source, "html.parser")
+            container = soup.find(class_='view-whats-new-page')
+            if container:
+                rows = container.find_all(class_='views-row')
+                for row in rows:
+                    a = row.find('a', href=True)
+                    if a:
+                        title = a.get_text(strip=True)
+                        href = a['href'].strip()
+                        if href.startswith('/'):
+                            full_link = "https://www.upsc.gov.in" + href
+                        elif href.startswith('http'):
+                            full_link = href
+                        else:
+                            full_link = urllib.parse.urljoin("https://www.upsc.gov.in/", urllib.parse.quote(href, safe='/:?=&'))
+
+                        if title and title not in seen:
+                            seen.add(title)
+                            updates.append({'title': title, 'link': full_link})
+        except Exception as ex:
+            print("Selenium fetch error:", ex)
+        finally:
+            if driver:
+                driver.quit()
+
+    if updates:
+        UPSC_UPDATES_CACHE['timestamp'] = current_time
+        UPSC_UPDATES_CACHE['data'] = updates
+        print(f"UPSC What's New items loaded: {len(updates)}")
+        return updates
+
+    # If both failed, return whatever cached data exists
+    return UPSC_UPDATES_CACHE.get('data', [])
 
 
 def categorize_updates(updates):
     categories = {
         'Results': [],
+        'Answer Keys': [],
         'Admit Cards': [],
         'Exam Schedules': [],
-        'Notifications': [],
+        'Notices & Notifications': [],
         'Others': []
     }
     for update in updates:
         title = update['title'].lower()
-        if 'result' in title:
+        if 'result' in title or 'marks' in title or 'selection list' in title:
             categories['Results'].append(update)
-        elif 'admit card' in title or 'call letter' in title:
+        elif 'answer key' in title:
+            categories['Answer Keys'].append(update)
+        elif 'admit card' in title or 'call letter' in title or 'e-admit' in title:
             categories['Admit Cards'].append(update)
-        elif 'schedule' in title or 'timetable' in title:
+        elif 'schedule' in title or 'timetable' in title or 'time table' in title or 'calendar' in title:
             categories['Exam Schedules'].append(update)
-        elif 'notification' in title:
-            categories['Notifications'].append(update)
+        elif 'notification' in title or 'notice' in title or 'rectt' in title or 'post' in title:
+            categories['Notices & Notifications'].append(update)
         else:
             categories['Others'].append(update)
     return categories
@@ -770,8 +821,164 @@ def categorize_updates(updates):
 def latest_updates():
     updates = fetch_updates()
     categorized_updates = categorize_updates(updates)
-    return render_template('latest_updates.html', updates=updates, categorized_updates=categorized_updates)
+    return render_template(
+        'latest_updates.html',
+        updates=updates,
+        categorized_updates=categorized_updates,
+        total_count=len(updates)
+    )
+
+
+# ─── QUIZ ROUTES ─────────────────────────────────────────────────────────────
+
+@app.route('/quiz')
+@login_required
+def quiz():
+    """Serve quiz page with 20 randomly shuffled questions from DB"""
+    all_questions = QuizQuestion.query.all()
+    if len(all_questions) >= 20:
+        selected = random.sample(all_questions, 20)
+    else:
+        selected = all_questions
+        random.shuffle(selected)
+
+    questions = []
+    for q in selected:
+        options = [
+            {'key': 'A', 'text': q.option_a},
+            {'key': 'B', 'text': q.option_b},
+            {'key': 'C', 'text': q.option_c},
+            {'key': 'D', 'text': q.option_d},
+        ]
+        random.shuffle(options)
+        questions.append({
+            'id': q.id,
+            'question': q.question,
+            'options': options,
+            'correct': q.correct_option,
+            'explanation': q.explanation or '',
+            'topic': q.topic or 'General',
+        })
+
+    return render_template(
+        'quiz.html',
+        questions=questions,
+        total=len(questions),
+        current_streak=current_user.quiz_streak or 0
+    )
+
+
+@app.route('/quiz/submit_result', methods=['POST'])
+@login_required
+def submit_quiz_result():
+    """Update user streak and performance when completing a quiz"""
+    data = request.get_json(silent=True) or request.form
+    score = int(data.get('score', 0))
+    total = int(data.get('total', 20))
+    pct = round((score / total) * 100) if total > 0 else 0
+
+    today = datetime.utcnow().date()
+
+    # Calculate streak continuity
+    if current_user.last_quiz_date is None:
+        # First time playing
+        current_user.quiz_streak = 1
+    elif current_user.last_quiz_date == today:
+        # Already played today; maintain streak (at least 1)
+        if not current_user.quiz_streak or current_user.quiz_streak == 0:
+            current_user.quiz_streak = 1
+    elif current_user.last_quiz_date == today - timedelta(days=1):
+        # Played yesterday, streak continues!
+        current_user.quiz_streak = (current_user.quiz_streak or 0) + 1
+    else:
+        # Gap > 1 day, streak resets to 1
+        current_user.quiz_streak = 1
+
+    current_user.last_quiz_date = today
+    current_user.last_quiz_score = pct
+    current_user.total_quizzes_played = (current_user.total_quizzes_played or 0) + 1
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'streak': current_user.quiz_streak,
+        'score': pct
+    })
+
+
+# ─── STUDY PLANNER ROUTES ─────────────────────────────────────────────────────
+
+@app.route('/study_planner')
+@login_required
+def study_planner():
+    """Show study planner page with today's tasks for the logged-in user"""
+    today = datetime.utcnow().date()
+    tasks = StudyTask.query.filter_by(
+        user_id=current_user.id,
+        task_date=today
+    ).order_by(StudyTask.created_at.asc()).all()
+    return render_template('study_planner.html', tasks=tasks, today=today)
+
+
+@app.route('/study_planner/add', methods=['POST'])
+@login_required
+def add_study_task():
+    task_text = request.form.get('task_text', '').strip()
+    if not task_text:
+        return jsonify({'success': False, 'message': 'Task cannot be empty'}), 400
+
+    today = datetime.utcnow().date()
+    new_task = StudyTask(
+        user_id=current_user.id,
+        task_text=task_text,
+        task_date=today,
+        is_completed=False
+    )
+    db.session.add(new_task)
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'task': {
+            'id': new_task.id,
+            'task_text': new_task.task_text,
+            'is_completed': new_task.is_completed
+        }
+    })
+
+
+@app.route('/study_planner/toggle/<int:task_id>', methods=['POST'])
+@login_required
+def toggle_study_task(task_id):
+    task = StudyTask.query.filter_by(id=task_id, user_id=current_user.id).first_or_404()
+    task.is_completed = not task.is_completed
+    db.session.commit()
+    return jsonify({'success': True, 'is_completed': task.is_completed})
+
+
+@app.route('/study_planner/delete/<int:task_id>', methods=['POST'])
+@login_required
+def delete_study_task(task_id):
+    task = StudyTask.query.filter_by(id=task_id, user_id=current_user.id).first_or_404()
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/study_planner/tasks')
+@login_required
+def get_study_tasks():
+    """API to get today's tasks as JSON (for dashboard widget)"""
+    today = datetime.utcnow().date()
+    tasks = StudyTask.query.filter_by(
+        user_id=current_user.id,
+        task_date=today
+    ).order_by(StudyTask.created_at.asc()).all()
+    return jsonify([{
+        'id': t.id,
+        'task_text': t.task_text,
+        'is_completed': t.is_completed
+    } for t in tasks])
+
 
 if __name__ == "__main__":
     app.run(debug=os.getenv("FLASK_DEBUG", "False") == "True")
-
