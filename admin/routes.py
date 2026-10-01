@@ -3,7 +3,7 @@ from functools import wraps
 from extensions import db
 from models import User, UPSCPaper
 from sqlalchemy import or_
-from models import Syllabus ,Feedback
+from models import Syllabus, Feedback, QuizQuestion
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -209,3 +209,87 @@ def delete_syllabus(syllabus_id):
 def manage_feedbacks():
     feedbacks = Feedback.query.order_by(Feedback.submitted_at.desc()).all()
     return render_template('admin/manage_feedbacks.html', feedbacks=feedbacks)
+
+
+# ─── QUIZ MANAGEMENT ─────────────────────────────────────────────────────────
+
+@admin_bp.route('/manage_quiz')
+@admin_login_required
+def manage_quiz():
+    topic_filter = request.args.get('topic', '').strip()
+    query = QuizQuestion.query
+    if topic_filter:
+        query = query.filter(QuizQuestion.topic.ilike(f'%{topic_filter}%'))
+    questions = query.order_by(QuizQuestion.id.desc()).all()
+    topics = db.session.query(QuizQuestion.topic).distinct().all()
+    topics = [t[0] for t in topics if t[0]]
+    return render_template('admin/manage_quiz.html', questions=questions, topics=topics, topic_filter=topic_filter)
+
+
+@admin_bp.route('/add_quiz_question', methods=['POST'])
+@admin_login_required
+def add_quiz_question():
+    data = request.form
+    question_text = data.get('question', '').strip()
+    option_a = data.get('option_a', '').strip()
+    option_b = data.get('option_b', '').strip()
+    option_c = data.get('option_c', '').strip()
+    option_d = data.get('option_d', '').strip()
+    correct_option = data.get('correct_option', '').strip().upper()
+    explanation = data.get('explanation', '').strip()
+    topic = data.get('topic', '').strip()
+
+    if not all([question_text, option_a, option_b, option_c, option_d, correct_option]):
+        flash('Please fill all required fields.', 'error')
+        return redirect(url_for('admin.manage_quiz'))
+
+    if correct_option not in ['A', 'B', 'C', 'D']:
+        flash('Correct option must be A, B, C, or D.', 'error')
+        return redirect(url_for('admin.manage_quiz'))
+
+    new_q = QuizQuestion(
+        question=question_text,
+        option_a=option_a,
+        option_b=option_b,
+        option_c=option_c,
+        option_d=option_d,
+        correct_option=correct_option,
+        explanation=explanation or None,
+        topic=topic or None
+    )
+    db.session.add(new_q)
+    db.session.commit()
+    flash('Question added successfully!', 'success')
+    return redirect(url_for('admin.manage_quiz'))
+
+
+@admin_bp.route('/edit_quiz_question/<int:q_id>', methods=['POST'])
+@admin_login_required
+def edit_quiz_question(q_id):
+    q = QuizQuestion.query.get_or_404(q_id)
+    data = request.form
+
+    q.question = data.get('question', q.question).strip()
+    q.option_a = data.get('option_a', q.option_a).strip()
+    q.option_b = data.get('option_b', q.option_b).strip()
+    q.option_c = data.get('option_c', q.option_c).strip()
+    q.option_d = data.get('option_d', q.option_d).strip()
+    correct = data.get('correct_option', q.correct_option).strip().upper()
+    if correct in ['A', 'B', 'C', 'D']:
+        q.correct_option = correct
+    q.explanation = data.get('explanation', q.explanation or '').strip() or None
+    q.topic = data.get('topic', q.topic or '').strip() or None
+
+    db.session.commit()
+    flash('Question updated successfully!', 'success')
+    return redirect(url_for('admin.manage_quiz'))
+
+
+@admin_bp.route('/delete_quiz_question/<int:q_id>', methods=['POST'])
+@admin_login_required
+def delete_quiz_question(q_id):
+    q = QuizQuestion.query.get_or_404(q_id)
+    db.session.delete(q)
+    db.session.commit()
+    flash('Question deleted successfully!', 'success')
+    return redirect(url_for('admin.manage_quiz'))

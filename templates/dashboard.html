@@ -1,34 +1,603 @@
 {% extends "base.html" %} {% block title %}Dashboard - UPSC Aspirant{% endblock
-%} {% block content %}
+%} {% block styles %}
+<style>
+  #sidebar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
 
-<div class="flex justify-center mt-36">
-  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-10">
-    {% set features = [ {"name": "Current Affairs", "url":
-    url_for('current_affairs'), "color": "bg-yellow-300", "icon": "news"},
-    {"name": "Syllabus", "url": url_for('syllabus_select_exam_type'), "color":
-    "bg-blue-300", "icon": "clipboard"}, {"name": "PYQs", "url":
-    url_for('pyq_examtype'), "color": "bg-rose-300", "icon": "open-book--v1"},
-    {"name": "NCERT Books", "url": url_for('class_select'), "color":
-    "bg-green-400", "icon": "books"}, {"name": "Static GK", "url": "static_gk",
-    "color": "bg-fuchsia-300", "icon": "light-on"}, {"name": "CSAT Practice",
-    "url": url_for('csat_practice'), "color": "bg-violet-300", "icon": "book-shelf"},
-    {"name": "Interview Prep", "url": "interview_index", "color":
-    "bg-orange-300", "icon": "microphone"}, {"name": "Latest Updates", "url":
-    url_for('latest_updates'), "color": "bg-cyan-300", "icon":
-    "appointment-reminders--v1"} ] %} {% for feature in features %}
-    <a href="{{ feature.url }}" class="block">
-      <div
-        class="{{ feature.color }} p-4 rounded-2xl shadow-md text-center w-[220px] h-[220px] flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg transition-all"
+  #sidebar::-webkit-scrollbar {
+    display: none;
+  }
+</style>
+{% endblock %} {% block content %} {% set progress_percent = ((completed_count /
+total_count) * 100)|round|int if total_count else 0 %}
+
+<button
+  type="button"
+  onclick="toggleSidebar()"
+  id="menuButton"
+  aria-label="Open menu"
+  aria-controls="sidebar"
+  aria-expanded="false"
+  class="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-teal-600 text-white shadow hover:bg-teal-700 transition lg:hidden"
+  title="Open menu"
+>
+  <i class="fas fa-bars text-xl"></i>
+</button>
+
+<aside
+  id="sidebar"
+  class="hidden mb-5 max-h-[60vh] overflow-y-auto rounded-xl bg-white shadow-md lg:mb-0 lg:fixed lg:left-0 lg:top-20 lg:bottom-20 lg:z-40 lg:block lg:max-h-none lg:w-72 lg:rounded-none"
+>
+  <div class="p-5">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-bold text-gray-800">UPSC Preparation</h2>
+
+      <button
+        type="button"
+        onclick="toggleSidebar()"
+        class="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center lg:hidden"
+        title="Close menu"
+        aria-label="Close menu"
       >
-        <img
-          src="https://img.icons8.com/ios-filled/60/{{ feature.icon }}.png"
-          class="mb-3"
-        />
-        <p class="font-semibold text-base">{{ feature.name }}</p>
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <a
+      href="{{ url_for('quiz') }}"
+      class="flex items-center gap-3 p-3 rounded-xl bg-indigo-300 shadow-sm mb-3 hover:scale-[1.02] transition"
+    >
+      <div
+        class="w-11 h-11 bg-white/60 rounded-lg flex items-center justify-center text-2xl"
+      >
+        📝
+      </div>
+
+      <div>
+        <span class="font-semibold text-gray-800"> Daily Quiz </span>
+
+        <p class="text-xs text-indigo-900 font-medium">10 Questions Test</p>
       </div>
     </a>
-    {% endfor %}
+
+    <a
+      href="{{ url_for('study_planner') }}"
+      class="flex items-center gap-3 p-3 rounded-xl bg-emerald-300 shadow-sm mb-3 hover:scale-[1.02] transition"
+    >
+      <div
+        class="w-11 h-11 bg-white/60 rounded-lg flex items-center justify-center text-2xl"
+      >
+        📅
+      </div>
+
+      <div>
+        <span class="font-semibold text-gray-800"> Study Planner </span>
+
+        <p class="text-xs text-emerald-900 font-medium">Today's To-Do List</p>
+      </div>
+    </a>
+
+    <a
+      href="{{ url_for('current_affairs') }}"
+      class="flex items-center gap-3 p-3 rounded-xl bg-yellow-300 hover:scale-[1.02] transition shadow-sm mb-3"
+    >
+      <div
+        class="w-11 h-11 bg-white/60 rounded-lg flex items-center justify-center text-2xl"
+      >
+        📰
+      </div>
+
+      <span class="font-semibold text-gray-800"> Current Affairs </span>
+    </a>
+
+    <a
+      href="{{ url_for('syllabus_select_exam_type') }}"
+      class="flex items-center gap-3 p-3 rounded-xl bg-blue-300 hover:scale-[1.02] transition shadow-sm mb-3"
+    >
+      <div
+        class="w-11 h-11 bg-white/60 rounded-lg flex items-center justify-center text-2xl"
+      >
+        📋
+      </div>
+
+      <span class="font-semibold text-gray-800"> Syllabus </span>
+    </a>
+
+    <a
+      href="{{ url_for('pyq_examtype') }}"
+      class="flex items-center gap-3 p-3 rounded-xl bg-rose-300 hover:scale-[1.02] transition shadow-sm mb-3"
+    >
+      <div
+        class="w-11 h-11 bg-white/60 rounded-lg flex items-center justify-center text-2xl"
+      >
+        📖
+      </div>
+
+      <span class="font-semibold text-gray-800"> PYQs </span>
+    </a>
+
+    <a
+      href="{{ url_for('class_select') }}"
+      class="flex items-center gap-3 p-3 rounded-xl bg-green-400 hover:scale-[1.02] transition shadow-sm mb-3"
+    >
+      <div
+        class="w-11 h-11 bg-white/60 rounded-lg flex items-center justify-center text-2xl"
+      >
+        📚
+      </div>
+
+      <span class="font-semibold text-gray-800"> NCERT Books </span>
+    </a>
+
+    <a
+      href="{{ url_for('interview_index') }}"
+      class="flex items-center gap-3 p-3 rounded-xl bg-orange-300 hover:scale-[1.02] transition shadow-sm mb-3"
+    >
+      <div
+        class="w-11 h-11 bg-white/60 rounded-lg flex items-center justify-center text-2xl"
+      >
+        🎤
+      </div>
+
+      <span class="font-semibold text-gray-800"> Interview Prep </span>
+    </a>
+
+    <a
+      href="{{ url_for('latest_updates') }}"
+      class="flex items-center gap-3 p-3 rounded-xl bg-cyan-300 hover:scale-[1.02] transition shadow-sm"
+    >
+      <div
+        class="w-11 h-11 bg-white/60 rounded-lg flex items-center justify-center text-2xl"
+      >
+        🔔
+      </div>
+
+      <span class="font-semibold text-gray-800"> Latest Updates </span>
+    </a>
+  </div>
+</aside>
+
+<div class="w-full px-4 md:px-6 py-6 lg:ml-72 lg:w-[calc(100%-18rem)]">
+  <div class="mb-7">
+    <p class="text-teal-600 font-semibold text-sm">WELCOME BACK 👋</p>
+
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mt-1">
+      Your UPSC Dashboard
+    </h1>
+
+    <p class="text-gray-500 mt-2">
+      Manage your preparation and track your UPSC journey.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
+    <div class="bg-white rounded-2xl shadow-md p-5 border-l-4 border-teal-500">
+      <p class="text-sm text-gray-500">Today's Goal</p>
+
+      <h2 id="dash-goal-stat" class="text-3xl font-bold text-gray-800 mt-2">
+        0 / 0
+      </h2>
+
+      <p id="dash-goal-sub" class="text-xs text-gray-400 mt-2">
+        Tasks completed today
+      </p>
+    </div>
+
+    <a
+      href="{{ url_for('quiz') }}"
+      class="block bg-white rounded-2xl shadow-md p-5 border-l-4 border-blue-500 hover:shadow-lg transition cursor-pointer"
+    >
+      <p class="text-sm text-gray-500 flex items-center justify-between">
+        <span>Daily Quiz</span>
+        <span
+          class="text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full"
+          >10 MCQs</span
+        >
+      </p>
+
+      <h2 class="text-2xl font-bold text-gray-800 mt-2 flex items-center gap-2">
+        {% if last_quiz_score > 0 %}{{ last_quiz_score }}%{% else %}Start Test{%
+        endif %}
+        <i class="fas fa-arrow-right text-base text-blue-500"></i>
+      </h2>
+
+      <p class="text-xs text-blue-600 mt-2 font-medium">
+        {% if total_quizzes > 0 %}{{ total_quizzes }} test(s) completed{% else
+        %}Solve shuffled UPSC questions{% endif %}
+      </p>
+    </a>
+
+    <div
+      class="bg-white rounded-2xl shadow-md p-5 border-l-4 border-orange-500"
+    >
+      <p class="text-sm text-gray-500 flex items-center justify-between">
+        <span>Current Streak</span>
+        {% if streak > 0 %}
+        <span
+          class="text-xs bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full"
+          >Active 🔥</span
+        >
+        {% endif %}
+      </p>
+
+      <h2 class="text-3xl font-bold text-gray-800 mt-2">🔥 {{ streak }}</h2>
+
+      <p
+        class="text-xs {% if streak > 0 %}text-orange-600 font-semibold{% else %}text-gray-400{% endif %} mt-2"
+      >
+        {% if streak > 0 %}Day(s) continuous streak!{% else %}Take a quiz to
+        start streak{% endif %}
+      </p>
+    </div>
+
+    <div
+      class="bg-white rounded-2xl shadow-md p-5 border-l-4 border-purple-500"
+    >
+      <p class="text-sm text-gray-500">Today's Progress</p>
+
+      <h2 id="dash-progress-stat" class="text-3xl font-bold text-gray-800 mt-2">
+        {{ progress_percent }}%
+      </h2>
+
+      <p id="dash-progress-sub" class="text-xs text-gray-400 mt-2">
+        {% if total_count %}{{ completed_count }} of {{ total_count }} study
+        tasks complete today{% else %}Add tasks to your study plan to track
+        progress{% endif %}
+      </p>
+
+      <div
+        id="dash-progress-bar"
+        class="w-full bg-gray-200 rounded-full h-2 mt-3"
+        role="progressbar"
+        aria-label="Today's study plan completion"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="{{ progress_percent }}"
+      >
+        <div
+          class="bg-purple-500 h-2 rounded-full transition-all duration-300"
+          style="width: 0%"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl shadow-md p-6">
+      <h2 class="text-xl font-bold text-gray-800">Quick Access</h2>
+
+      <p class="text-sm text-gray-500 mt-1 mb-5">Continue your preparation</p>
+
+      <a
+        href="{{ url_for('pyq_examtype') }}"
+        class="flex items-center gap-4 p-4 rounded-xl bg-purple-50 hover:bg-purple-100 transition mb-3"
+      >
+        <span class="text-3xl">📚</span>
+
+        <div>
+          <h3 class="font-semibold text-gray-800">Practice PYQs</h3>
+
+          <p class="text-sm text-gray-500">Solve previous year questions</p>
+        </div>
+      </a>
+
+      <a
+        href="{{ url_for('current_affairs') }}"
+        class="flex items-center gap-4 p-4 rounded-xl bg-yellow-50 hover:bg-yellow-100 transition mb-3"
+      >
+        <span class="text-3xl">📰</span>
+
+        <div>
+          <h3 class="font-semibold text-gray-800">Current Affairs</h3>
+
+          <p class="text-sm text-gray-500">Stay updated with latest news</p>
+        </div>
+      </a>
+
+      <a
+        href="{{ url_for('quiz') }}"
+        class="flex items-center gap-4 p-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition mb-3"
+      >
+        <span class="text-3xl">📝</span>
+
+        <div>
+          <h3 class="font-semibold text-gray-800">Daily UPSC Quiz</h3>
+
+          <p class="text-sm text-gray-500">Solve 10 randomized MCQs</p>
+        </div>
+      </a>
+
+      <a
+        href="{{ url_for('class_select') }}"
+        class="flex items-center gap-4 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition"
+      >
+        <span class="text-3xl">📖</span>
+
+        <div>
+          <h3 class="font-semibold text-gray-800">NCERT Books</h3>
+
+          <p class="text-sm text-gray-500">Build your basic concepts</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Today's Study Planner (To-Do List) Widget -->
+    <div
+      class="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between"
+    >
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <span>Today's Study Plan</span>
+              <span
+                class="text-xs bg-teal-100 text-teal-800 font-semibold px-2.5 py-0.5 rounded-full"
+              >
+                {{ today.strftime('%d %b') }}
+              </span>
+            </h2>
+            <p class="text-xs text-gray-500 mt-0.5">
+              Tick completed tasks or add new targets
+            </p>
+          </div>
+
+          <a
+            href="{{ url_for('study_planner') }}"
+            class="text-xs font-semibold text-teal-600 hover:text-teal-800 flex items-center gap-1 bg-teal-50 px-3 py-1.5 rounded-lg transition"
+          >
+            Full Planner <i class="fas fa-arrow-right text-xs"></i>
+          </a>
+        </div>
+
+        <!-- Quick Add Form -->
+        <form id="dash-task-form" class="flex gap-2 my-4">
+          <input
+            type="text"
+            id="dash-task-input"
+            placeholder="Add today's target (e.g. Modern History 1 hr)..."
+            class="flex-1 px-3 py-2 text-xs md:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            required
+          />
+          <button
+            type="submit"
+            class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl text-xs md:text-sm transition flex items-center gap-1 shadow-sm"
+          >
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </form>
+
+        <!-- Task Checklist -->
+        <div class="max-h-60 overflow-y-auto pr-1">
+          <ul id="dash-task-list" class="space-y-2 text-sm">
+            {% for task in today_tasks %}
+            <li
+              id="dash-task-{{ task.id }}"
+              class="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 hover:bg-gray-50 transition"
+            >
+              <label class="flex items-center gap-2.5 flex-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  data-task-id="{{ task.id }}"
+                  {%
+                  if
+                  task.is_completed
+                  %}checked{%
+                  endif
+                  %}
+                  class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500 cursor-pointer"
+                />
+                <span
+                  class="dash-task-text text-xs md:text-sm font-medium text-gray-800 {% if task.is_completed %}line-through text-gray-400{% endif %}"
+                >
+                  {{ task.task_text }}
+                </span>
+              </label>
+              <button
+                type="button"
+                data-task-id="{{ task.id }}"
+                class="text-gray-300 hover:text-red-500 p-1 transition"
+                title="Delete target"
+              >
+                <i class="fas fa-times text-xs"></i>
+              </button>
+            </li>
+            {% else %}
+            <li id="dash-empty-state" class="text-center py-6 text-gray-400">
+              <i class="fas fa-tasks text-3xl mb-2 text-gray-300 block"></i>
+              <p class="text-xs font-medium text-gray-500">
+                No targets added for today yet.
+              </p>
+              <p class="text-[11px] text-gray-400 mt-0.5">
+                Quickly add a study goal above!
+              </p>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Bottom Progress Banner -->
+      <div
+        class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500"
+      >
+        <span id="dash-status-text">
+          {{ completed_count }} of {{ total_count }} tasks done
+        </span>
+        <span class="font-semibold text-teal-600"> Stay Consistent 🎯 </span>
+      </div>
+    </div>
   </div>
 </div>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const button = document.getElementById("menuButton");
+    const isOpen = !sidebar.classList.contains("hidden");
+
+    sidebar.classList.toggle("hidden");
+    button.setAttribute("aria-expanded", String(!isOpen));
+
+    button.innerHTML = isOpen
+      ? '<i class="fas fa-bars text-xl"></i>'
+      : '<i class="fas fa-times text-xl"></i>';
+    button.title = isOpen ? "Open menu" : "Close menu";
+    button.setAttribute("aria-label", button.title);
+  }
+
+  function updateDashStats() {
+    const checkboxes = document.querySelectorAll(
+      '#dash-task-list input[type="checkbox"]',
+    );
+    const total = checkboxes.length;
+    let done = 0;
+    checkboxes.forEach((cb) => {
+      if (cb.checked) done++;
+    });
+
+    const stat = document.getElementById("dash-goal-stat");
+    const statusText = document.getElementById("dash-status-text");
+    const progressStat = document.getElementById("dash-progress-stat");
+    const progressSub = document.getElementById("dash-progress-sub");
+    const progressBar = document.getElementById("dash-progress-bar");
+    const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    if (stat) stat.textContent = `${done} / ${total}`;
+    if (statusText) statusText.textContent = `${done} of ${total} tasks done`;
+    if (progressStat) progressStat.textContent = `${progress}%`;
+    if (progressSub) {
+      progressSub.textContent = total
+        ? `${done} of ${total} study tasks complete today`
+        : "Add tasks to your study plan to track progress";
+    }
+    if (progressBar) {
+      progressBar.setAttribute("aria-valuenow", progress);
+      progressBar.firstElementChild.style.width = `${progress}%`;
+    }
+  }
+
+  const dashTaskList = document.getElementById("dash-task-list");
+  if (dashTaskList) {
+    dashTaskList.addEventListener("change", (event) => {
+      const checkbox = event.target.closest("input[data-task-id]");
+      if (checkbox) toggleDashTask(checkbox.dataset.taskId);
+    });
+
+    dashTaskList.addEventListener("click", (event) => {
+      const deleteButton = event.target.closest("button[data-task-id]");
+      if (deleteButton) deleteDashTask(deleteButton.dataset.taskId);
+    });
+  }
+
+  // Handle Add Task from Dashboard
+  const dashForm = document.getElementById("dash-task-form");
+  if (dashForm) {
+    dashForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const input = document.getElementById("dash-task-input");
+      const text = input.value.trim();
+      if (!text) return;
+
+      const formData = new FormData();
+      formData.append("task_text", text);
+
+      try {
+        const res = await fetch("{{ url_for('add_study_task') }}", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.success) {
+          input.value = "";
+          const empty = document.getElementById("dash-empty-state");
+          if (empty) empty.remove();
+
+          const task = data.task;
+          const li = document.createElement("li");
+          li.id = `dash-task-${task.id}`;
+          li.className =
+            "flex items-center justify-between p-2.5 rounded-xl border border-gray-100 hover:bg-gray-50 transition";
+          li.innerHTML = `
+                    <label class="flex items-center gap-2.5 flex-1 cursor-pointer">
+                        <input
+                            type="checkbox"
+                          data-task-id="${task.id}"
+                            class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500 cursor-pointer"
+                        />
+                        <span class="dash-task-text text-xs md:text-sm font-medium text-gray-800">
+                            ${task.task_text}
+                        </span>
+                    </label>
+                    <button
+                      type="button"
+                      data-task-id="${task.id}"
+                        class="text-gray-300 hover:text-red-500 p-1 transition"
+                        title="Delete target"
+                    >
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+          document.getElementById("dash-task-list").prepend(li);
+          updateDashStats();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
+
+  async function toggleDashTask(taskId) {
+    try {
+      const res = await fetch(`/study_planner/toggle/${taskId}`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        const item = document.getElementById(`dash-task-${taskId}`);
+        const textSpan = item.querySelector(".dash-task-text");
+        if (data.is_completed) {
+          textSpan.classList.add("line-through", "text-gray-400");
+        } else {
+          textSpan.classList.remove("line-through", "text-gray-400");
+        }
+        updateDashStats();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function deleteDashTask(taskId) {
+    try {
+      const res = await fetch(`/study_planner/delete/${taskId}`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        const item = document.getElementById(`dash-task-${taskId}`);
+        if (item) item.remove();
+
+        const list = document.getElementById("dash-task-list");
+        if (list.children.length === 0) {
+          list.innerHTML = `
+                    <li id="dash-empty-state" class="text-center py-6 text-gray-400">
+                        <i class="fas fa-tasks text-3xl mb-2 text-gray-300 block"></i>
+                        <p class="text-xs font-medium text-gray-500">No targets added for today yet.</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Quickly add a study goal above!</p>
+                    </li>
+                `;
+        }
+        updateDashStats();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Initial count sync
+  updateDashStats();
+</script>
 
 {% endblock %}

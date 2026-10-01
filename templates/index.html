@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -18,7 +18,9 @@
 
       /* Animation for Hover Effects */
       .animated-box {
-        transition: transform 0.4s ease, box-shadow 0.4s ease;
+        transition:
+          transform 0.4s ease,
+          box-shadow 0.4s ease;
       }
 
       .animated-box:hover {
@@ -150,7 +152,9 @@
       <!-- Watermark Effect -->
       <div
         class="absolute inset-0 opacity-10 bg-center bg-no-repeat"
-        style="background-image: url('path-to-your-watermark-image.png')"
+        style="
+          background-image: url(&quot;path-to-your-watermark-image.png&quot;);
+        "
       ></div>
 
       <div class="max-w-6xl mx-auto text-center relative z-10 px-6">
@@ -372,32 +376,6 @@
             >
             <p class="mt-2 text-gray-700">
               Mock interviews with experts to prepare you for the final round.
-            </p>
-          </div>
-
-          <!-- Static GK Feature -->
-          <div
-            class="p-6 bg-white rounded-xl animated-box shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-          >
-            <div class="text-4xl mb-4 text-teal-500">🌍</div>
-            <strong class="text-xl font-semibold text-gray-800"
-              >Static GK</strong
-            >
-            <p class="mt-2 text-gray-700">
-              Topic-based facts and sheets to strengthen your general knowledge.
-            </p>
-          </div>
-
-          <!-- Optional Subjects Feature -->
-          <div
-            class="p-6 bg-white rounded-xl animated-box shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-          >
-            <div class="text-4xl mb-4 text-indigo-500">📚</div>
-            <strong class="text-xl font-semibold text-gray-800"
-              >CSAT Practice</strong
-            >
-            <p class="mt-2 text-gray-700">
-              provides Civil Services Aptitude Test exam practice.
             </p>
           </div>
 
